@@ -21,7 +21,7 @@ jobs:
         run: bun install
 
       - name: Build
-        run: bun build
+        run: bun dev
 
       - name: Commit data
         run: |

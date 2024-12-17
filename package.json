@@ -3,8 +3,7 @@
   "private": true,
   "version": "0.0.1",
   "scripts": {
-    "dev": "bun run src/index.ts",
-    "build": "bun run src/index.ts"
+    "dev": "bun run src/index.ts"
   },
   "author": "V3X Labs",
   "license": "GPL-3.0-only"
