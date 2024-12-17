@@ -42,11 +42,24 @@ async function cloneFontAwesome(tmpDir: string) {
     await execAsync('git clone --depth 1 https://github.com/FortAwesome/Font-Awesome.git ./tmp/fa');
 }
 
+async function cloneFeatherIcons(tmpDir: string) {
+    const featherDir = path.join(tmpDir, 'feather');
+    try {
+        await fs.access(featherDir);
+        // If directory exists, remove it
+        await fs.rm(featherDir, { recursive: true });
+    } catch { }
+
+    console.log('Cloning Feather Icons repository...');
+    await execAsync('git clone --depth 1 https://github.com/feathericons/feather.git ./tmp/feather');
+}
+
 async function getSvgFiles(directory: string): Promise<string[]> {
     const files = await fs.readdir(directory);
     return files
         .filter(file => file.endsWith('.svg'))
-        .map(file => file.replace('.svg', ''));
+        .map(file => file.replace('.svg', ''))
+        .sort((a, b) => a.localeCompare(b));
 }
 
 async function main() {
@@ -60,7 +73,10 @@ async function main() {
     // Clone Font Awesome repository
     await cloneFontAwesome(tmpDir);
 
-    // Define directories to scan
+    // Clone Feather Icons repository
+    await cloneFeatherIcons(tmpDir);
+
+    // Define directories to scan for Font Awesome
     const directories = ['brands', 'regular', 'solid'];
     const faStructure: FontAwesomeStructure = {
         svgs: {
@@ -79,7 +95,7 @@ async function main() {
         }
     };
 
-    // Scan each directory and collect SVG files
+    // Scan each directory and collect SVG files for Font Awesome
     for (const dir of directories) {
         const fullPath = path.join(tmpDir, 'fa', 'svgs', dir);
         faStructure.svgs[dir as keyof typeof faStructure.svgs] = {
@@ -88,10 +104,23 @@ async function main() {
         };
     }
 
-    // Write output to dist/fa.json
-    const outputPath = path.join(distDir, 'fa.json');
-    await fs.writeFile(outputPath, JSON.stringify(faStructure, null, 2));
+    // Write Font Awesome output to dist/fa.json
+    const faOutputPath = path.join(distDir, 'fa.json');
+    await fs.writeFile(faOutputPath, JSON.stringify(faStructure, null, 2));
     console.log('Generated fa.json successfully!');
+
+    // Define structure for Feather Icons
+    const featherStructure = {
+        svgs: {
+            url: 'https://raw.githubusercontent.com/feathericons/feather/refs/heads/main/icons/$ITEM.svg',
+            icons: await getSvgFiles(path.join(tmpDir, 'feather', 'icons'))
+        }
+    };
+
+    // Write Feather Icons output to dist/feather.json
+    const featherOutputPath = path.join(distDir, 'feather.json');
+    await fs.writeFile(featherOutputPath, JSON.stringify(featherStructure, null, 2));
+    console.log('Generated feather.json successfully!');
 
     // remove tmp directory
     await fs.rm(tmpDir, { recursive: true });
